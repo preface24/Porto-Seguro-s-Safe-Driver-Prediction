@@ -17,7 +17,7 @@ from sklearn.model_selection import StratifiedKFold # 用于进行分层k-folds 
 import gc # 垃圾收集器，可手动调用提高运行效率
 from numba import jit
 from sklearn.preprocessing import LabelEncoder
-import time 
+import time
 
 
 @jit
@@ -82,27 +82,40 @@ def target_encode(trn_series=None,
                 smoothing=1,
                 noise_level=0):
     """
-    Smoothing is computed like in the following paper by Daniele Micci-Barreca
-    https://kaggle2.blob.core.windows.net/forum-message-attachments/225952/7441/high%20cardinality%20categoricals.pdf
+
+    trn_series: 训练集中的类别特征，类型为 Pandas Series
+    tst_series: 测试集中的类别特征，类型为 Pandas Series
+    target: 目标变量（可以是连续的或分类的），它用于计算每个类别的均值
+    min_samples_leaf: 对每个类别考虑计算平均值的最小样本数
+    smoothing: 平滑系数，用于平衡类别均值与整体均值之间的相对权重，避免对样本数很少的类别过拟合
+    平滑度计算参考：https://kaggle2.blob.core.windows.net/forum-message-attachments/225952/7441/high%20cardinality%20categoricals.pdf
+    参考：https://www.saedsayad.com/encoding.htm、
+        https://www.kaggle.com/code/ogrellier/python-target-encoding-for-categorical-features/notebook
+    
     trn_series : training categorical feature as a pd.Series
     tst_series : test categorical feature as a pd.Series
     target : target data as a pd.Series
     min_samples_leaf (int) : minimum samples to take category average into account
     smoothing (int) : smoothing effect to balance categorical average vs prior
     """
+    # 通过assert检查输入的有效性,若未通过会抛出AssertionError异常
     assert len(trn_series) == len(target)
     assert trn_series.name == tst_series.name
+
+    # 将特征值和目标变量拼接，计算目标变量的均值等
     temp = pd.concat([trn_series, target], axis=1)
-    # Compute target mean
+    # 计算目标变量均值
     averages = temp.groupby(by=trn_series.name)[target.name].agg(["mean", "count"])
-    # Compute smoothing
+    # 计算平滑系数
     smoothing = 1 / (1 + np.exp(-(averages["count"] - min_samples_leaf) / smoothing))
-    # Apply average function to all target data
+    # 计算整体的(先验)均值
     prior = target.mean()
-    # The bigger the count the less full_avg is taken into account
+    # 使用平滑系数调整类别平均值
+    # 类别中样本数越大，目标变量整体均值在最终编码值中所占的权重就越小
     averages[target.name] = prior * (1 - smoothing) + averages["mean"] * smoothing
     averages.drop(["mean", "count"], axis=1, inplace=True)
-    # Apply averages to trn and tst series
+    # 使用map()将训练集和测试集中的分类特征值映射到最终编码值上
+    # 对于未出现在训练集中的类别（导致NaN），用整体平均值填充
     ft_trn_series = trn_series.map(averages['target']).fillna(prior)  
     ft_tst_series = tst_series.map(averages['target']).fillna(prior) 
 
@@ -199,6 +212,7 @@ for n_c, (f1, f2) in enumerate(combs):
 trn_df = trn_df[train_features]
 sub_df = sub_df[train_features]
 
+# 为什么单独处理含_cat的特征？
 f_cats = [f for f in trn_df.columns if "_cat" in f]
 
 for f in f_cats:
