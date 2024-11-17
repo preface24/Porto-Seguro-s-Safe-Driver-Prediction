@@ -1,37 +1,43 @@
 # README
-
 ## 概览
 项目：Porto Seguro’s Safe Driver Prediction
 目的：预测汽车保险单持有人提出索赔的概率
 本质：分类问题，输出结果是一个bool值（yes or no）
 指标：使用Normalized Gini Coefficient(归一化基尼系数进行评估)
 数据集细节：
-(1)测试集的数据量超过训练集
-(2)匿名数据，没有用户信息，只有id、target、features
-
+（1）测试集的数据量超过训练集
+（2）匿名数据，没有用户信息，只有id、target、features
 
 ## 数据集纯度指标
 在决策树的学习过程中，算法会利用纯度指标来选择最佳的分裂特征和分裂点，以便构建出纯度尽可能高的节点
 通过不断地分裂和纯化节点，最终可以形成一个完整的决策树模型，用于对新样本进行分类或回归预测
 常见的纯度指标有：熵、Gini系数等等
-
 ### 信息熵(entropy)和信息增益
 **定义**
 熵通过计算数据集中每个类别出现的概率的对数的负加权和来量化纯度
 **公式**
-H(p) = - sum((p_i)*log2(p_i)) , i from 1 to n
-其中p_i为第i类样本在数据集；熵的值越小，数据集的纯度越高
+$$
+H(p) = - sum((p_i)*log_2(p_i))
+$$
+其中 $p_i$ 为第i类样本在数据集；熵的值越小，数据集的纯度越高
+其中 $p_i$ 为第i类样本在数据集；熵的值越小，数据集的纯度越高
 
 
 ### 基尼指数(Gini index)
 **定义**
 Gini指数通过计算数据集中**随机选择**两个样本它们类别不同的概率来量化纯度；在决策树算法中，Gini指数被用作选择分割点和评估决策树质量的一种方法
 **计算公式**
-Gini(p) = 1 - sum((p_i)^2) , i from 1 to n
+$$
+Gini(p) = 1 - sum((p_i)^2)
+$$
+其中 $p_i$ 为第i类样本在数据集中的比例；Gini指数的值越小，数据集的纯度越高(节点纯度高指的是节点包含的样本尽量属于同一类别)
+**作用**
+（1）在决策树中，Gini指数被用作分裂节点选择的标准；对于某个特征的不同分割点，计算使用这个分割点分裂后的两个子节点的加权Gini指数之和，然后取最小值，这个最小值对应的分割点就是选择的分裂节点(相当于最小化每个分割节点的不纯度)
+（2）剪枝是防止决策树过拟合的常用技术，在剪枝的过程中，Gini指数可以帮助评价剪枝后决策树的性能；如果剪枝后的决策树能够保持较低的Gini指数，表明剪枝没有显著影响模型的预测能力
 其中p_i为第i类样本在数据集中的比例；Gini指数的值越小，数据集的纯度越高(节点纯度高指的是节点包含的样本尽量属于同一类别)
 **作用**
-(1)在决策树中，Gini指数被用作分裂节点选择的标准；对于某个特征的不同分割点，计算使用这个分割点分裂后的两个子节点的加权Gini指数之和，然后取最小值，这个最小值对应的分割点就是选择的分裂节点(相当于最小化每个分割节点的不纯度)
-(2)剪枝是防止决策树过拟合的常用技术，在剪枝的过程中，Gini指数可以帮助评价剪枝后决策树的性能；如果剪枝后的决策树能够保持较低的Gini指数，表明剪枝没有显著影响模型的预测能力
+（1）在决策树中，Gini指数被用作分裂节点选择的标准；对于某个特征的不同分割点，计算使用这个分割点分裂后的两个子节点的加权Gini指数之和，然后取最小值，这个最小值对应的分割点就是选择的分裂节点(相当于最小化每个分割节点的不纯度)
+（2）剪枝是防止决策树过拟合的常用技术，在剪枝的过程中，Gini指数可以帮助评价剪枝后决策树的性能；如果剪枝后的决策树能够保持较低的Gini指数，表明剪枝没有显著影响模型的预测能力
 
 
 
@@ -48,23 +54,17 @@ Gini(p) = 1 - sum((p_i)^2) , i from 1 to n
 
 
 ### 特征选择
+学习参考：https://www.kaggle.com/code/ogrellier/noise-analysis-of-porto-seguro-s-features/comments
 
-学习参考：
-
-https://www.kaggle.com/code/ogrellier/noise-analysis-of-porto-seguro-s-features/comments
-
-Elements of Statistical Learning 2ed  p593
-
-https://anotherdataminingblog.blogspot.com/2013/10/techniques-to-improve-accuracy-of-your_17.html 视频的40:12分左右开始讲variable importance部分
+"Elements of Statistical Learning 2ed"  p593
 
 
 
 #### 衡量变量重要性(variable importance)的算法
-
 目的：用于提取重要特征
-
-优点：(1)可以消除冗余变量；(2)这个算法是独立于模型的，换句话说，对各类不同模型都可以使用这个方法
-
+优点：
+（1）可以消除冗余变量
+（2）这个算法是独立于模型的，换句话说，对各类不同模型都可以使用这个方法
 做法：重要看"变化"，将所有变量通过模型，观察产生的Error = Predict - Actual，Error增加越多说明变量越重要(能对模型产生很大的影响)，若Error没有变化说明它不怎么重要
 
 
@@ -76,10 +76,49 @@ https://anotherdataminingblog.blogspot.com/2013/10/techniques-to-improve-accurac
 
 
 #### 为什么要对组合特征使用LabelEncoder？
+使用LabelEncoder对离散变量进行编码，因为决策树可以处理数值型特征，而不能直接处理字符串特征
 
 
 
-
+### 特征编码
+#### 目标编码(Target Encoding)
+**介绍**
+该项目使用了target encoding方法对训练集和测试集中的类别特征进行编码，该方法来源于Daniele Micci-Barreca的paper：["A preprocessing scheme for high-cardinality categorical attributes in classification and prediction problems"](http://helios.mm.di.uoa.gr/~rouvas/ssi/sigkdd/sigkdd.vol3.1/barreca.pdf)，它是一种基于目标变量（通常是回归或分类任务中的标签值）进行编码的方法，核心思想是利用每个类别特征（categorical feature）与目标变量之间的统计关系，将类别型特征转换为连续数值
+有趣的是，虽然这篇论文于2001年就发表了，但这种方法真正开始被人们关注却是在2016年以后，作者本人在2020年发表了相关博客来介绍这种编码方法，博客链接如下：https://towardsdatascience.com/extending-target-encoding-443aa9414cae
+**方法**
+下面介绍target encoding的编码过程：
+（1）计算类别与目标变量的统计量：对于每个类别，计算与目标变量相关的统计值（如均值、加权均值等）；例如在函数`target encoding()`中，采用了各类别对应的目标变量`y`的均值作为它们各自的编码值
+（2）平滑处理
+为了防止各类别样本数量不平衡所导致的过拟合，通常采用加权平滑的方式计算编码值：
+$$
+Si = \frac{n_i \cdot \text{mean}_i + \lambda \cdot \text{mean}_{global}}{n_i + \lambda}
+ = \frac{1}{1+e^{−\frac{count_i−min\_samples\_leaf}{smoothing}}}
+$$
+参数解释
+$S_i$：类别 $i$ 的编码值
+$n_i$：类别 $i$ 的样本数量
+$mean_i$：类别 $i$ 的目标变量均值
+$mean_{global}$：全局目标变量的均值
+$λ$：平滑系数，决定类别均值和全局均值的权重分配
+（3）交叉验证分割
+为了避免信息泄漏，将训练数据按交叉验证的方式分成多折，每一折的类别均值在其他折中计算，确保训练集中没有直接使用测试数据的信息
+**应用场景**
+（1）高基数类别特征：当特征的类别数较多且有明显的目标变量关联时（如用户 ID、地理位置编码），目标编码非常有效
+（2）非线性关系建模：特别适合需要将类别特征与目标变量的关系融入模型中的任务，例如预测任务中的目标倾向性
+（3）需要降维的场景：相较于one-hot encoding可能导致维度爆炸的问题，target encoding能显著减少特征维度
+（4）适合树模型和线性模型：提供了数值连续的特征，便于线性模型处理，同时也能为树模型提供更丰富的信息
+**潜在问题及解决方法**
+（1）数据泄漏：如果训练过程中目标值被直接用来计算编码值，可能导致模型对测试集的过拟合
+解决方法：通过交叉验证来确保编码过程中目标值的隔离
+（2）类别样本不平衡：样本数量较少的类别可能导致编码值极端偏移
+解决方法：引入全局目标变量的均值、使用平滑系数$λ$对类别均值和全局均值进行加权
+（3）对目标值分布敏感：对于极度偏态分布的目标变量，可能需要特定的处理方法（如取对数、分箱）
+**其他特征编码方法**
+有官方文档介绍了对类别特征的编码器接口(Category Encoders)，调用它们可以简单地通过控制参数来实现各种特征编码方式，文档链接如下：https://contrib.scikit-learn.org/category_encoders/index.html
+各类编码器也有其适用的场景，例如：
+对树模型来说，使用target encoding、label encoding的效果较好
+对线性模型来说，使用one-hot encoding的效果较好，这是因为此时解决的大部分都是稀疏数据相关的问题
+对深度学习模型来说，使用embedding效果较好，这是因为数据本身具有一定的复杂关系
 
 #### 要不要做数据增强？
 
